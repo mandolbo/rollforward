@@ -1,0 +1,264 @@
+# 보안을 고려한 .gitignore 파일
+# 롤포워딩 프로젝트용 - 보안을 고려한 .gitignore 파일
+
+# ==========================================
+# 개인 설정 파일들 (보안 민감)
+# ==========================================
+
+# 설정 디렉토리 전체
+/rollforward_mvp/config/
+config/
+*.config
+*.conf
+
+# 개인 설정 파일들
+rollforward_config.json
+whitelist.json
+blacklist.json
+user_settings.json
+personal_config.json
+
+# 백업 설정 파일들
+config_backup_*/
+backup_*/
+*.bak
+*.backup
+
+# ==========================================
+# 로그 파일들 (민감한 정보 포함 가능)
+# ==========================================
+
+# 모든 로그 파일
+*.log
+logs/
+log_*/
+debug_*.txt
+error_*.txt
+rollforward_*.log
+
+# 디버그 정보 파일들 (시스템 경로 및 개인정보 포함)
+debug_info_*.txt
+debug_collector_output.txt
+system_info.txt
+
+# 사용자별 경로가 포함된 파일들
+*username*
+*OneDrive*
+*Desktop*
+*/Users/*
+
+# ==========================================
+# 테스트 및 샘플 파일들
+# ==========================================
+
+# 실제 업무 파일들 (개인정보 보호)
+*.xlsx
+*.xlsm
+*.xls
+
+# 테스트 파일 폴더 전체 제외
+test_files/
+
+# 테스트 결과 파일들
+test_results/
+test_output/
+temp_test_*/
+
+# 테스트 파일들 - 코드 실행에 불필요 (개인정보 포함 가능)
+test_*.py
+check_*.py
+quick_test.py
+
+# rollforward_mvp 폴더 내 문서 파일들 (개인정보 포함)
+rollforward_mvp/README.md
+rollforward_mvp/ROLLFORWARD_WORKFLOW_GUIDE.md
+
+# 처리 결과 파일들
+processed_*/
+rollforward_result_*/
+backup_*/
+
+# ==========================================
+# 임시 파일들
+# ==========================================
+
+# 시스템 임시 파일
+*.tmp
+*.temp
+temp_*/
+tmp_*/
+~$*
+
+# Python 임시 파일
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# 편집기 임시 파일
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Claude Code 설정 폴더
+.claude/
+
+# ==========================================
+# 민감한 시스템 정보
+# ==========================================
+
+# 시스템 경로 정보가 포함된 파일들
+file_paths.txt
+system_paths.json
+directory_structure.txt
+
+# 사용자 정보 포함 파일들
+user_data.json
+personal_info.txt
+login_history.log
+
+# 데이터베이스 파일들 (있다면)
+*.db
+*.sqlite
+*.sqlite3
+
+# ==========================================
+# 프로젝트 관련 제외사항
+# ==========================================
+
+# 빌드 결과물
+dist/
+build/
+*.egg-info/
+
+# 패키지 관리
+.env
+.venv
+env/
+venv/
+ENV/
+
+# OS별 시스템 파일
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ==========================================
+# 특별히 보안이 중요한 파일들
+# ==========================================
+
+# API 키 및 인증 정보
+*.key
+*.pem
+*.cert
+*.crt
+*.p12
+*.pfx
+
+# 환경 변수 파일
+.env
+.env.local
+.env.production
+.env.development
+
+# 민감한 스크립트
+deploy.sh
+production.py
+secrets.py
+
+# 압축 파일 (내용 확인 어려움)
+*.zip
+*.rar
+*.7z
+*.tar
+*.tar.gz
+
+# ==========================================
+# 개발자 노트 (개인 정보 포함 가능)
+# ==========================================
+
+# 개발 메모
+TODO.txt
+NOTES.txt
+개발메모.txt
+작업일지.txt
+
+# 개인 문서들
+*.docx
+*.pdf
+*.pptx
+개인*/
+private*/
+
+# ==========================================
+# 보안 스캔 결과
+# ==========================================
+
+# 보안 도구 결과
+security_scan.txt
+vulnerability_report.txt
+audit_log.txt
+
+# ==========================================
+# 예외사항 (포함해야 하는 파일들)
+# ==========================================
+
+# 프로젝트 필수 파일들은 포함
+!requirements.txt
+!README.md
+!setup.py
+!*.py
+
+# 샘플/테스트용 파일들 (개인정보 없는 것만)
+!rollforward_mvp/test_files/sample_*.xlsx
+!tests/
+!examples/
+
+# 설정 템플릿 파일들
+!config_template.json
+!settings_example.json
+
+# 문서화 파일들 - 사용자 요청으로 모든 .md 파일 제외
+*.md
+docs/
+CHANGELOG.md
+새_개발자_참조_문서/
+
+# README.md는 예외 (프로젝트 설명용)
+!README.md
+
+# ==========================================
+# 추가 보안 고려사항
+# ==========================================
+
+# 네트워크 관련 설정 파일
+hosts
+*.hosts
+network_config.json
+
+# 인증서 관련
+certificates/
+ssl/
+tls/
+
+# 프로파일링 결과 (성능 정보 포함 가능)
+*.prof
+profiling_*/
+
+# 에러 덤프 파일
+crash_dump_*
+error_dump_*
+*.dmp
+
+# 메모리 덤프
+memory_dump_*
+heap_dump_*
