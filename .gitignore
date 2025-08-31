@@ -192,6 +192,17 @@ NOTES.txt
 개발메모.txt
 작업일지.txt
 
+# 보안 관련 내부 문서
+SECURITY_CHECKLIST.md
+SECURITY_*.md
+security_notes.txt
+
+# 개발 계획 및 워크플로우 문서
+ROLLFORWARD_WORKFLOW_GUIDE.md
+WORKFLOW_*.md
+development_plan.md
+project_roadmap.md
+
 # 개인 문서들
 *.docx
 *.pdf
