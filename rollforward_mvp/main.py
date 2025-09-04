@@ -45,6 +45,7 @@ import os
 import re
 import sys
 import logging
+import shutil
 from datetime import datetime
 from pathlib import Path
 
@@ -53,6 +54,59 @@ from pathlib import Path
 # =================================================================
 
 # LogCapture 클래스와 TeeOutput 클래스 삭제됨 - Excel 로그 워크시트로 대체
+
+def create_single_backup(file_path):
+    """
+    단일 백업 함수: 롤포워딩 시작 전 단 한 번만 백업 생성
+    
+    Args:
+        file_path (str): 백업할 파일 경로 (전기 조서)
+        
+    Returns:
+        bool: 백업 성공 여부
+    """
+    
+    try:
+        if not os.path.exists(file_path):
+            print(f"[create_single_backup] ❌ 백업 대상 파일이 존재하지 않습니다: {file_path}")
+            return False
+        
+        # 백업 폴더 생성
+        file_dir = os.path.dirname(file_path)
+        backup_dir = os.path.join(file_dir, "Roll-Forwarding_Backup")
+        os.makedirs(backup_dir, exist_ok=True)
+        
+        # 백업 파일명 생성 (타임스탬프 포함)
+        file_name = os.path.basename(file_path)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_filename = f"{os.path.splitext(file_name)[0]}_backup_{timestamp}{os.path.splitext(file_name)[1]}"
+        backup_path = os.path.join(backup_dir, backup_filename)
+        
+        # 백업 실행
+        shutil.copy2(file_path, backup_path)
+        
+        print(f"[create_single_backup] ✅ 백업 생성 완료: {backup_path}")
+        return True
+        
+    except Exception as e:
+        print(f"[create_single_backup] ❌ 백업 생성 실패: {e}")
+        return False
+
+def confirm_backup_failure():
+    """
+    백업 실패 시 계속 진행할지 확인
+    
+    Returns:
+        bool: 계속 진행하면 True, 중단하면 False
+    """
+    while True:
+        answer = input("백업 없이 계속 진행하시겠습니까? (매우 위험할 수 있습니다) (y/n): ").strip().lower()
+        if answer in ['y', 'yes', '예', 'ㅇ']:
+            return True
+        elif answer in ['n', 'no', '아니오', 'ㄴ']:
+            return False
+        else:
+            print("y 또는 n을 입력해주세요.")
 
 # =================================================================
 # 프로세스 A: 백데이터 워크시트 처리 함수들
@@ -780,6 +834,18 @@ def main():
             return
         
         # =================================================================
+        # 백업 생성: 실제 작업 시작 전 단 한 번만 백업 수행
+        # =================================================================
+        print("\n[main.main] 💾 롤포워딩 대상 조서 백업 생성 중...")
+        backup_success = create_single_backup(previous_file)
+        
+        if not backup_success:
+            print("[main.main] ⚠️ 백업 생성 실패. 계속 진행하시겠습니까?")
+            if not confirm_backup_failure():
+                print("[main.main] ❌ 사용자가 백업 실패로 인해 작업을 취소했습니다.")
+                return
+        
+        # =================================================================
         # 추가: 프로세스 A - 독립 워크시트 자동 감지 및 처리 (백데이터 중에서)
         # =================================================================
         
@@ -814,19 +880,34 @@ def main():
                 all_backdata_worksheets, previous_file, current_files
             )
             
-            # 프로세스 A에서 성공한 워크시트 목록 추출
+            # 프로세스 A에서 성공한 워크시트와 실패한 워크시트 목록 추출
             successfully_copied_worksheets = []
+            failed_backdata_worksheets = []
+            
             if process_a_results and 'success' in process_a_results:
                 for result in process_a_results['success']:
                     successfully_copied_worksheets.append(result['target'])  # 워크시트 이름
             
-            print(f"[main.main] 🎯 프로세스 A 완료: {len(successfully_copied_worksheets)}개 워크시트 복사 성공")
+            # 프로세스 A에서 매칭 실패한 워크시트들 (프로세스 B 제외 대상)
+            if process_a_results:
+                if 'failed' in process_a_results:
+                    failed_backdata_worksheets.extend(process_a_results['failed'])
+                if 'no_source' in process_a_results:
+                    failed_backdata_worksheets.extend(process_a_results['no_source'])
+            
+            print(f"[main.main] 🎯 프로세스 A 완료:")
+            print(f"[main.main]    ✅ 복사 성공: {len(successfully_copied_worksheets)}개")
+            print(f"[main.main]    ❌ 매칭/복사 실패: {len(failed_backdata_worksheets)}개")
+            
             if successfully_copied_worksheets:
-                print(f"[main.main]    복사된 워크시트: {', '.join(successfully_copied_worksheets)}")
+                print(f"[main.main]    성공 워크시트: {', '.join(successfully_copied_worksheets)}")
+            if failed_backdata_worksheets:
+                print(f"[main.main]    실패 워크시트: {', '.join(failed_backdata_worksheets)} → 프로세스 B 제외")
         else:
             print("\n💡 백데이터 워크시트가 감지되지 않았습니다.")
             print("[main.main] 프로세스 A 건너뛰기 - 일반 워크시트 테이블 단위 처리만 실행")
             successfully_copied_worksheets = []
+            failed_backdata_worksheets = []
         
         print("[main.main] \n✅ 파일 선택 완료! 롤포워딩을 시작합니다...\n")
         
@@ -841,13 +922,19 @@ def main():
         # 전체 테이블 찾기
         all_previous_tables = find_tables(previous_file)  # table_finder.py의 함수 호출
         
-        # 프로세스 A에서 성공한 워크시트가 있는 경우, 해당 워크시트의 테이블 제외
+        # 프로세스 A 결과에 따른 워크시트 제외 처리
         excluded_worksheets = []
         if 'successfully_copied_worksheets' in locals() and successfully_copied_worksheets:
-            excluded_worksheets = successfully_copied_worksheets
-            print(f"[main.main] 🎯 이미 복사된 워크시트 제외: {', '.join(excluded_worksheets)}")
+            excluded_worksheets.extend(successfully_copied_worksheets)
+            print(f"[main.main] 🎯 프로세스 A 성공 워크시트 제외: {', '.join(successfully_copied_worksheets)}")
         
-        # 이미 복사된 워크시트의 테이블 필터링
+        # 🆕 프로세스 A 매칭 실패한 백데이터 워크시트도 프로세스 B에서 제외
+        if 'failed_backdata_worksheets' in locals() and failed_backdata_worksheets:
+            excluded_worksheets.extend(failed_backdata_worksheets)
+            print(f"[main.main] ❌ 프로세스 A 실패 워크시트도 제외: {', '.join(failed_backdata_worksheets)}")
+            print(f"[main.main] 💡 실패 이유: 당기 PBC에서 매칭되는 워크시트를 찾을 수 없음")
+        
+        # 제외 대상 워크시트의 테이블 필터링
         previous_tables = []
         for table in all_previous_tables:
             if table['sheet'] not in excluded_worksheets:
@@ -855,7 +942,8 @@ def main():
         
         print(f"[main.main]    → 전체 테이블 수: {len(all_previous_tables)}개")
         if excluded_worksheets:
-            print(f"[main.main]    → 제외된 테이블 수: {len(all_previous_tables) - len(previous_tables)}개")
+            excluded_count = len(all_previous_tables) - len(previous_tables)
+            print(f"[main.main]    → 제외된 테이블 수: {excluded_count}개 (성공: {len(successfully_copied_worksheets) if 'successfully_copied_worksheets' in locals() else 0}개, 실패: {len(failed_backdata_worksheets) if 'failed_backdata_worksheets' in locals() else 0}개)")
         print(f"[main.main]    → 프로세스 B 처리 대상: {len(previous_tables)}개")
         
         # =================================================================

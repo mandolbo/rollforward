@@ -138,32 +138,17 @@ def worksheet_full_replace(source_file, source_sheet, target_file, target_sheet,
             logger.error(f"❌ 타겟 파일 접근 실패: {target_file} - {e}")
             return False
         
-        # 2. 롤포워딩 대상 조서 영구 백업 생성
+        # 2. 백업은 main.py에서 이미 수행됨 - 여기서는 임시 백업만 생성
         try:
-            # 영구 백업 폴더 생성
-            backup_dir = os.path.join(os.path.dirname(target_file), "Roll-Forwarding_Backup")
-            os.makedirs(backup_dir, exist_ok=True)
-            
-            # 영구 백업 파일명 (타임스탬프 포함)
-            from datetime import datetime
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            target_filename = Path(target_file).stem
-            permanent_backup = os.path.join(backup_dir, f"{target_filename}_{timestamp}.xlsx")
-            
-            # 임시 백업 (복구용) 
+            # 임시 백업 (복구용) - 작업 실패 시 즉시 복원용
             temp_backup = target_file + ".temp_backup_" + str(int(time.time()))
-            
-            # 두 개의 백업 생성
-            shutil.copy2(target_file, permanent_backup)
             shutil.copy2(target_file, temp_backup)
             
-            logger.info(f"📋 영구 백업 생성: {permanent_backup}")
-            logger.info(f"🔄 임시 백업 생성: {temp_backup}")
-            
-            backup_file = temp_backup  # 기존 변수는 임시 백업용으로 사용
+            logger.info(f"🔄 작업용 임시 백업 생성: {temp_backup}")
+            backup_file = temp_backup
             
         except Exception as backup_error:
-            logger.warning(f"⚠️ 백업 파일 생성 실패 (계속 진행): {backup_error}")
+            logger.warning(f"⚠️ 임시 백업 파일 생성 실패 (계속 진행): {backup_error}")
             backup_file = None
         
         # 3. 워크북 로드 (파일 잠금 처리)

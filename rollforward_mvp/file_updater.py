@@ -37,39 +37,20 @@ def update_file(matches, current_pbc_path, previous_ledger_path):
         print("[file_updater.update_file] ⚠️ 업데이트할 매칭이 없습니다")
         return False
     
-    backup_path = None
-    
+    # 백업은 main.py에서 이미 수행됨 - 중복 백업 제거
     try:
-        # 💾 1. 대상 파일(previous_ledger) 백업 생성 (필수!)
-        if os.path.exists(previous_ledger_path):
-            # Backup 폴더 생성
-            file_dir = os.path.dirname(previous_ledger_path)
-            backup_dir = os.path.join(file_dir, "Backup")
-            
-            # Backup 폴더가 없으면 생성
-            if not os.path.exists(backup_dir):
-                os.makedirs(backup_dir)
-                print(f"[file_updater.update_file] 📁 Backup 폴더 생성: {backup_dir}")
-            
-            # 백업 파일 경로 생성 (대상 파일 백업)
-            file_name = os.path.basename(previous_ledger_path)
-            backup_filename = f"{os.path.splitext(file_name)[0]}_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}{os.path.splitext(file_name)[1]}"
-            backup_path = os.path.join(backup_dir, backup_filename)
-            
-            shutil.copy2(previous_ledger_path, backup_path)
-            print(f"[file_updater.update_file] 💾 대상 파일 백업 생성: {backup_path}")
-        else:
+        if not os.path.exists(previous_ledger_path):
             print(f"[file_updater.update_file] ⚠️ 대상 파일이 없습니다: {previous_ledger_path}")
             return False
         
-        # 📂 2. 두 파일 열기
+        # 📂 1. 두 파일 열기
         print(f"[file_updater.update_file] 📂 소스 파일 로드: {current_pbc_path}")
         current_wb = openpyxl.load_workbook(current_pbc_path)  # 소스: 당기 PBC
         
         print(f"[file_updater.update_file] 📂 대상 파일 로드: {previous_ledger_path}")
         target_wb = openpyxl.load_workbook(previous_ledger_path)  # 대상: 전기 조서 (백데이터)
         
-        # ✏️ 3. 매칭된 데이터 업데이트 (실제 데이터 복사 구현)
+        # ✏️ 2. 매칭된 데이터 업데이트 (실제 데이터 복사 구현)
         update_count = 0
         copied_rows_count = 0
         
@@ -194,7 +175,7 @@ def update_file(matches, current_pbc_path, previous_ledger_path):
                 print(f"[file_updater.update_file] 📁 대상 파일: {previous_ledger_path} (백데이터 시트 업데이트됨)")
                 print(f"[file_updater.update_file] 📊 매칭: {update_count}개")
                 print(f"[file_updater.update_file] 📝 복사된 행: {copied_rows_count}개")
-                print(f"[file_updater.update_file] 💾 백업: {backup_path}")
+                print(f"[file_updater.update_file] 💾 백업은 main.py에서 이미 수행됨")
                 
                 # 워크북 정리 (저장 후에 닫기)
                 try:
@@ -243,14 +224,7 @@ def update_file(matches, current_pbc_path, previous_ledger_path):
         
     except Exception as e:
         print(f"[file_updater.update_file] ❌ 백데이터 업데이트 실패: {e}")
-        
-        # 백업에서 복원 시도
-        if backup_path and os.path.exists(backup_path):
-            try:
-                shutil.copy2(backup_path, previous_ledger_path)
-                print(f"[file_updater.update_file] 🔄 백업에서 복원 완료")
-            except Exception as restore_error:
-                print(f"[file_updater.update_file] ❌ 복원도 실패: {restore_error}")
+        print(f"[file_updater.update_file] 💡 Roll-Forwarding_Backup 폴더의 백업 파일을 확인하세요")
         
         try:
             current_wb.close()
